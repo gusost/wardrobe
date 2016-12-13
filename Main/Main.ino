@@ -1,11 +1,17 @@
 #include <EEPROM.h>
+#include "SoftPWM.h"
 #include "structs.h"
 /*
 	Use sensors and LEDs.
 */
 
 Drawer drawers[5];
-
+// variables for pattern timing
+/*
+unsigned long currentMillis = millis();
+unsigned long previousMillis = 0;
+unsigned long millisInterval = 10;
+*/
 void setup() {
 	Serial.begin(115200);
 	for(uint8_t i = 0; i < 54; i++) Serial.print("=");
@@ -27,6 +33,7 @@ void setup() {
 		Serial.print(" has LED pin ");
 		Serial.println(drawers[i].ledPin);
 	}
+	setupPWMpins();
 }
 
 void loop() {
@@ -34,14 +41,18 @@ void loop() {
 		Drawer drawer = drawers[i];
 		if( drawerIsOpen(drawer) ) {
 			for(int8_t j = i; j >= 0; j--){
-				digitalWrite(drawers[j].ledPin, HIGH);
+				setPwmLevelForDrawer(j,255);
+//				digitalWrite(drawers[j].ledPin, HIGH);
+				handlePWM(); // GG. Temp
 				delay(250);
 			}
 			break;
 		} else {
-			digitalWrite(drawer.ledPin, LOW);
+			setPwmLevelForDrawer(i,0);
+			//digitalWrite(drawer.ledPin, LOW);
 		}
 	}
+	handlePWM();
 }
 
 uint16_t getDrawerSensorValue(Drawer drawer) {
@@ -54,7 +65,6 @@ uint16_t getSensorValue(uint8_t sensorPin) {
 	}
 	return tempValue / 64;
 }
-
 bool drawerIsOpen(Drawer drawer) {
 	uint16_t tempValue = getSensorValue(drawer.sensor.pin);
 	if (drawer.sensor.baseValue > tempValue + 50) {
