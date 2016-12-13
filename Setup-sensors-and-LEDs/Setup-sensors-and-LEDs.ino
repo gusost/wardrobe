@@ -1,18 +1,8 @@
 #include <EEPROM.h>
+#include "structs.h"
 /*
 	Setup sensors and LEDs.
 */
-
-typedef struct {
-	uint8_t pin;
-	uint16_t baseValue;
-} Sensor;
-
-
-typedef struct {
-	Sensor sensor;
-	uint8_t ledPin;
-} Drawer;
 
 Sensor sensors[5] = {{A1,0},{A4,0},{A5,0},{A6,0},{A7,0}};
 Drawer drawers[5];
