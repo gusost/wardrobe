@@ -112,7 +112,6 @@ void findSensors(uint8_t drawer) {
 void findLEDs(uint8_t LED) {
 	digitalWrite(LED, HIGH);
 	Serial.println("Please open the drawer that is lit");
-	delay(1000);
 	bool allClosed = true;
 	uint8_t drawer = 0;
 	while( allClosed ) {

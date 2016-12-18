@@ -22,6 +22,32 @@ pwmPin myPWMpins[pinCount];
  
 void setPwmLevelForDrawer(uint8_t drawer, uint8_t level) {
 	myPWMpins[drawer].pwmValue = level;
+	myPWMpins[drawer].doneTime = millis();
+}
+void setPwmLevelForDrawer(uint8_t drawer, uint8_t level, uint32_t doneTime) {
+	myPWMpins[drawer].finalPwmValue = level;
+	myPWMpins[drawer].doneTime = doneTime;
+}
+void updatePwmValues() {
+	for (int index=0; index < pinCount; index++) {
+		int16_t pwmDiff =  myPWMpins[index].finalPwmValue - myPWMpins[index].pwmValue;
+		// Should it change?
+		if( pwmDiff != 0) {
+			int32_t timeDiff = myPWMpins[index].doneTime - millis();
+			if(timeDiff < 0 || myPWMpins[index].doneTime == 0) {
+				myPWMpins[index].pwmValue = myPWMpins[index].finalPwmValue;
+				myPWMpins[index].doneTime = 0;
+			}
+			// Is it increasing and should it change now?
+			else if (pwmDiff > 0 && timeDiff < pwmDiff) { // Looks wierd but am using one pwm step per ms.
+				myPWMpins[index].pwmValue = myPWMpins[index].finalPwmValue - timeDiff;
+			} 
+			else if ( pwmDiff < 0 && timeDiff < 0 - pwmDiff ) {
+				myPWMpins[index].pwmValue = myPWMpins[index].finalPwmValue + timeDiff;
+			}
+			// Needs the case where timeDone
+		}
+	}
 }
 
 void setupPWMpins() {
@@ -30,13 +56,11 @@ void setupPWMpins() {
  
 		// mix it up a little bit
 		// changes the starting pwmValue for odd and even
-		if (index % 2)
-			myPWMpins[index].pwmValue = 25;
-		else
-			myPWMpins[index].pwmValue = 75;
- 
-		myPWMpins[index].pinState = ON;
+		myPWMpins[index].doneTime = 0;
+		myPWMpins[index].pwmValue = 0;
+		myPWMpins[index].pinState = OFF;
 		myPWMpins[index].pwmTickCount = 0;
+		myPWMpins[index].finalPwmValue = 0;
  
 		// unlike analogWrite(), this is necessary
 		pinMode(pins[index], OUTPUT);
@@ -55,21 +79,28 @@ void pwmFadePattern() {
 }
  
 void handlePWM() {
-	currentMicros = micros();
+	// GG. Timer event driven now. no need to check manually.
+//	currentMicros = micros();
 	// check to see if we need to increment our PWM counters yet
-	if (currentMicros - previousMicros >= microInterval) {
+//	if (currentMicros - previousMicros >= microInterval) {
 		// Increment each pin's counter
 		for (int index=0; index < pinCount; index++) {
-			// each pin has its own tickCounter
-			myPWMpins[index].pwmTickCount++;
 			// determine if we're counting on or off time
 			if(myPWMpins[index].pwmValue == pwmMax) {
+				if(myPWMpins[index].pinState == ON) {
+					continue;
+				}
 				myPWMpins[index].pinState = ON;
 			}
 			else if(myPWMpins[index].pwmValue == 0) {
+				if(myPWMpins[index].pinState == OFF) {
+					continue;
+				}
 				myPWMpins[index].pinState = OFF;
 			}
-			else if (myPWMpins[index].pinState == ON) {
+						// each pin has its own tickCounter
+			myPWMpins[index].pwmTickCount++;
+			if (myPWMpins[index].pinState == ON) {
 				// see if we hit the desired on percentage
 				// not as precise as 255 or 1024, but easier to do math
 				if (myPWMpins[index].pwmTickCount >= myPWMpins[index].pwmValue) {
@@ -84,10 +115,23 @@ void handlePWM() {
 			}
 			// could probably use some bitwise optimization here, digitalWrite()
 			// really slows things down after 10 pins.
-			digitalWrite(myPWMpins[index].pin, myPWMpins[index].pinState);
+			if (myPWMpins[index].pin < 8) {
+				if(myPWMpins[index].pinState){
+					PORTD |= _BV(myPWMpins[index].pin); //= PORTD | 0b00000000;
+				} else {
+					PORTD &= ~(_BV(myPWMpins[index].pin)); //PORTD = PORTD | 0b00000100;
+				}
+			} else {
+				if(myPWMpins[index].pinState){
+					PORTB |= _BV(myPWMpins[index].pin - 8); 
+				} else {
+					PORTB &= ~(_BV(myPWMpins[index].pin - 8));
+				}
+			}
+			//digitalWrite(myPWMpins[index].pin, myPWMpins[index].pinState);
 		}
 		// reset the micros() tick counter.
 		// digitalWrite(13, !digitalRead(13)); // Why?!
-		previousMicros = currentMicros;
-	}
+//		previousMicros = currentMicros;
+//	}
 }

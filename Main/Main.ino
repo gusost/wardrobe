@@ -6,6 +6,10 @@
 */
 
 Drawer drawers[5];
+volatile uint8_t on = 0;
+// PORTD has pinbits 4-7 for pins 4-7
+// pin 8 has pinbit 0 for port c
+// uint8_t pinBit = _BV(4); //digitalPinToBitMask(4);
 // variables for pattern timing
 /*
 unsigned long currentMillis = millis();
@@ -34,25 +38,38 @@ void setup() {
 		Serial.println(drawers[i].ledPin);
 	}
 	setupPWMpins();
+	setupInterruptTimer(0,0);
 }
-
+uint16_t updateTimer = millis();
 void loop() {
+	uint32_t doneMillis = millis();
 	for(int8_t i = 4; i >= 0; i--) {
 		Drawer drawer = drawers[i];
 		if( drawerIsOpen(drawer) ) {
 			for(int8_t j = i; j >= 0; j--){
-				setPwmLevelForDrawer(j,255);
-//				digitalWrite(drawers[j].ledPin, HIGH);
-				handlePWM(); // GG. Temp
+				doneMillis += 250;
+				digitalWrite(drawers[j].ledPin, HIGH);
 				delay(250);
+				//setPwmLevelForDrawer(j, 255, doneMillis);
 			}
 			break;
 		} else {
-			setPwmLevelForDrawer(i,0);
-			//digitalWrite(drawer.ledPin, LOW);
+			if (digitalRead(drawer.ledPin) == HIGH) {
+				digitalWrite(drawer.ledPin, LOW);		
+				delay(250);
+			}
+			//doneMillis += 250;
+			//setPwmLevelForDrawer(j, 0, doneMillis);
 		}
 	}
-	handlePWM();
+/*
+	while (doneMillis > millis()) { // Wait until done for now. Events should do stuff.
+		delay(10);
+		Serial.println("millis doneMillis");
+		Serial.println(millis()); // = millis();
+		Serial.println(doneMillis); // = millis();
+	}
+*/
 }
 
 uint16_t getDrawerSensorValue(Drawer drawer) {
@@ -66,9 +83,76 @@ uint16_t getSensorValue(uint8_t sensorPin) {
 	return tempValue / 64;
 }
 bool drawerIsOpen(Drawer drawer) {
-	uint16_t tempValue = getSensorValue(drawer.sensor.pin);
-	if (drawer.sensor.baseValue > tempValue + 50) {
+	if (drawer.sensor.baseValue > getSensorValue(drawer.sensor.pin) + 50) {
 		return true;
 	}
 	return false;
+}
+ISR(TIMER1_COMPA_vect){  //change the 0 to 1 for timer1 and 2 for timer2
+   //interrupt commands here
+   //updatePwmValues();
+   //digitalWrite(4, !digitalRead(4));
+/*   if(on == 1) {
+	   PORTB |= pinBit; //= PORTD | 0b00000000; // toggle D4
+	   on = 0;
+   } else {
+	   PORTB &= ~pinBit; //PORTD = PORTD | 0b00000100; // toggle D4
+	   on = 1;
+   }
+*/
+	updatePwmValues();
+}
+
+ISR(TIMER2_COMPA_vect){
+	handlePWM();
+}
+
+void setupInterruptTimer(uint32_t us, uint8_t timer){
+	
+	/*
+	uint16_t f = 10^6 / us;
+	uint16_t compareReg = (16*10^6) / (f*64);
+
+	// 1, 8, 64, 256, 1024 are the prescalers for 0b001, 0b010, 0b011, 0b100, 0b101
+	*/ 
+	// GG. Setup the 1000Hz update brightness value
+	cli();
+/*	TCCR0A = 0;// set entire TCCR0A register to 0
+	TCCR0B = 0;// same for TCCR0B
+	TCNT0  = 0;// initialize counter value to 0
+	// set compare match register for 2khz increments
+	OCR0A = 249;// = (16*10^6) / (1000*64) - 1 (must be <256)
+	// turn on CTC mode
+	TCCR0A |= (1 << WGM01);
+	// Set CS01 and CS00 bits for 64 prescaler
+	TCCR0B |= (1 << CS01) | (1 << CS00);   
+	// enable timer compare interrupt
+	TIMSK0 |= (1 << OCIE0A);
+*/
+	TCCR1A = 0;// set entire TCCR1A register to 0
+	TCCR1B = 0;// same for TCCR1B
+	TCNT1  = 0;//initialize counter value to 0
+	// set compare match register for 1hz increments
+	OCR1A = 249; // = (16*10^6) / (1000*64) - 1 (must be <65536)
+	// turn on CTC mode
+	TCCR1B |= (1 << WGM12);
+	// Set CS10 and CS12 bits for 1024 prescaler
+	TCCR1B |= (1 << CS12) | (1 << CS10);  
+	// enable timer compare interrupt
+	TIMSK1 |= (1 << OCIE1A);
+
+
+	// GG. Setup the 100KHz SoftPWM handler. (100kHz / 8) now
+	TCCR2A = 0;// set entire TCCR2A register to 0
+	TCCR2B = 0;// same for TCCR2B
+	TCNT2  = 0;// initialize counter value to 0
+	// set compare match register for 8khz increments
+	OCR2A = 159;// = (16*10^6) / (8000*8) - 1 (must be <256)
+	// turn on CTC mode
+	TCCR2A |= (1 << WGM21);
+	// Set CS21 bit for 8 prescaler
+	TCCR2B |= (1 << CS21);   
+	// enable timer compare interrupt
+	TIMSK2 |= (1 << OCIE2A);
+	sei();
 }
