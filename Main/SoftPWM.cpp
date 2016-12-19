@@ -19,12 +19,16 @@ const int pinCount = 5;
 const byte pins[pinCount] = {8,7,6,5,4}; // GG Rigth for now. Make dynamic
  
 pwmPin myPWMpins[pinCount];
- 
+
+// GG. Instant / just set it
 void setPwmLevelForDrawer(uint8_t drawer, uint8_t level) {
-	myPWMpins[drawer].pwmValue = level;
-	myPWMpins[drawer].doneTime = millis();
+	setPwmLevelForDrawer(drawer, level, millis());
 }
 void setPwmLevelForDrawer(uint8_t drawer, uint8_t level, uint32_t doneTime) {
+	// GG. If done, just return, don't update the doneTime.
+	if(myPWMpins[drawer].finalPwmValue == level) {
+		return;
+	}
 	myPWMpins[drawer].finalPwmValue = level;
 	myPWMpins[drawer].doneTime = doneTime;
 }
@@ -98,19 +102,21 @@ void handlePWM() {
 				}
 				myPWMpins[index].pinState = OFF;
 			}
-						// each pin has its own tickCounter
-			myPWMpins[index].pwmTickCount++;
-			if (myPWMpins[index].pinState == ON) {
-				// see if we hit the desired on percentage
-				// not as precise as 255 or 1024, but easier to do math
-				if (myPWMpins[index].pwmTickCount >= myPWMpins[index].pwmValue) {
-					myPWMpins[index].pinState = OFF;
-				}
-			} else {
-				// if it isn't on, it is off
-				if (myPWMpins[index].pwmTickCount >= pwmMax) {
-					myPWMpins[index].pinState = ON;
-					myPWMpins[index].pwmTickCount = 0;
+			// each pin has its own tickCounter
+			else { 
+				myPWMpins[index].pwmTickCount++;
+				if (myPWMpins[index].pinState == ON) {
+					// see if we hit the desired on percentage
+					// not as precise as 255 or 1024, but easier to do math
+					if (myPWMpins[index].pwmTickCount >= myPWMpins[index].pwmValue) {
+						myPWMpins[index].pinState = OFF;
+					}
+				} else {
+					// if it isn't on, it is off
+					if (myPWMpins[index].pwmTickCount >= pwmMax) {
+						myPWMpins[index].pinState = ON;
+						myPWMpins[index].pwmTickCount = 0;
+					}
 				}
 			}
 			// could probably use some bitwise optimization here, digitalWrite()

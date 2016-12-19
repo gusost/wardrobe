@@ -42,37 +42,8 @@ void setup() {
 }
 uint16_t updateTimer = millis();
 void loop() {
-	uint32_t doneMillis = millis() + 125;
-	for(int8_t i = 4; i >= 0; i--) {
-		Drawer drawer = drawers[i];
-		if( drawerIsOpen(drawer) ) {
-			for(int8_t j = i; j >= 0; j--){
-/*				digitalWrite(drawers[j].ledPin, HIGH);
-				delay(250);
-*/
-				doneMillis += 125;
-				setPwmLevelForDrawer(j, 255, doneMillis);
-			}
-			break;
-		} else {
-/*			if (digitalRead(drawer.ledPin) == HIGH) {
-				digitalWrite(drawer.ledPin, LOW);		
-				delay(250);
-			} 
-*/
-			doneMillis += 125;
-			setPwmLevelForDrawer(i, 0, doneMillis);
-		}
-	}
-
-	while (doneMillis > millis()) { // Wait until done for now. Events should do stuff.
-		delay(1);
-/*		Serial.println("millis doneMillis");
-		Serial.println(millis()); // = millis();
-		Serial.println(doneMillis); // = millis();
-*/
-	}
-
+//	noPwm();
+	withPwm();
 }
 
 uint16_t getDrawerSensorValue(Drawer drawer) {
@@ -91,18 +62,55 @@ bool drawerIsOpen(Drawer drawer) {
 	}
 	return false;
 }
+
+void withPwm(){
+	uint32_t doneMillis = millis() + 125;
+	for(int8_t i = 4; i >= 0; i--) {
+		Drawer drawer = drawers[i];
+		if( drawerIsOpen(drawer) ) {
+			// GG. This RESETS the doneMillis from turning drawers off. If this is not done a long delay will be felt when opening a drawer far up
+			for(int8_t j = i; j >= 0; j--){
+				doneMillis += 125;
+				setPwmLevelForDrawer(j, 255, doneMillis);
+			}
+			break;
+		} else {
+			doneMillis = millis() + 125;
+			setPwmLevelForDrawer(i, 0, doneMillis);
+		}
+	}
+	int16_t doneDelay = doneMillis - millis();
+	if (doneDelay > 0) {
+		delay(doneDelay + 5); // { // Wait until done for now. Events should do stuff.	
+	}
+/*		delay(10);
+		Serial.println("millis doneMillis");
+		Serial.println(millis()); // = millis();
+		Serial.println(doneMillis); // = millis();
+*/
+}
+
+void noPwm() {
+	for(int8_t i = 4; i >= 0; i--) {
+		Drawer drawer = drawers[i];
+		if( drawerIsOpen(drawer) ) {
+			// GG. This RESETS the doneMillis from turning drawers off. If this is not done a long delay will be felt when opening a drawer far up
+			for(int8_t j = i; j >= 0; j--){
+				digitalWrite(drawers[j].ledPin, HIGH);
+				delay(250);
+			}
+			break;
+		} else {
+			if (digitalRead(drawer.ledPin) == HIGH) {
+				digitalWrite(drawer.ledPin, LOW);		
+				delay(250);
+			} 
+		}
+	}
+}
+
 ISR(TIMER1_COMPA_vect){  //change the 0 to 1 for timer1 and 2 for timer2
    //interrupt commands here
-   //updatePwmValues();
-   //digitalWrite(4, !digitalRead(4));
-/*   if(on == 1) {
-	   PORTB |= pinBit; //= PORTD | 0b00000000; // toggle D4
-	   on = 0;
-   } else {
-	   PORTB &= ~pinBit; //PORTD = PORTD | 0b00000100; // toggle D4
-	   on = 1;
-   }
-*/
 	updatePwmValues();
 }
 
