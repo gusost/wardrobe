@@ -42,24 +42,21 @@ void setup() {
 }
 uint16_t updateTimer = millis();
 void loop() {
+	withPwm();
+	//noPwm();
+}
+
+void withPwm() {
 	uint32_t doneMillis = millis() + 125;
 	for(int8_t i = 4; i >= 0; i--) {
 		Drawer drawer = drawers[i];
 		if( drawerIsOpen(drawer) ) {
 			for(int8_t j = i; j >= 0; j--){
-/*				digitalWrite(drawers[j].ledPin, HIGH);
-				delay(250);
-*/
 				doneMillis += 125;
 				setPwmLevelForDrawer(j, 255, doneMillis);
 			}
 			break;
 		} else {
-/*			if (digitalRead(drawer.ledPin) == HIGH) {
-				digitalWrite(drawer.ledPin, LOW);		
-				delay(250);
-			} 
-*/
 			doneMillis += 125;
 			setPwmLevelForDrawer(i, 0, doneMillis);
 		}
@@ -72,9 +69,24 @@ void loop() {
 		Serial.println(doneMillis); // = millis();
 */
 	}
-
 }
-
+void noPwm() {
+	for(int8_t i = 4; i >= 0; i--) {
+		Drawer drawer = drawers[i];
+		if( drawerIsOpen(drawer) ) {
+			for(int8_t j = i; j >= 0; j--){
+				digitalWrite(drawers[j].ledPin, HIGH);
+				delay(250);
+			}
+			break;
+		} else {
+			if (digitalRead(drawer.ledPin) == HIGH) {
+				digitalWrite(drawer.ledPin, LOW);		
+				delay(250);
+			} 
+		}
+	}
+}
 uint16_t getDrawerSensorValue(Drawer drawer) {
 	return getSensorValue(drawer.sensor.pin);
 }
@@ -151,7 +163,7 @@ void setupInterruptTimer(uint32_t us, uint8_t timer){
 	TCNT2  = 0;// initialize counter value to 0
 	// set compare match register for 8khz increments
 	// Ska vara 159 med prescaler 1 för 100KHz OCR2A = 159;// = (16*10^6) / (8000*8) - 1 (must be <256)
-	OCR2A = 79;
+	OCR2A = 59;
 	// turn on CTC mode
 	TCCR2A |= (1 << WGM21);
 	// Set CS21 bit for 8 prescaler

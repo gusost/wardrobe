@@ -6,5 +6,6 @@ typedef struct {
 
 typedef struct {
 	Sensor sensor;
-	uint8_t ledPin;
+	uint8_t ledPin; // 4,7,8 is SoftPWM
 } Drawer;
+ 
