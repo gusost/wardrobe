@@ -1,0 +1,10 @@
+{
+  "builtInLibrariesFolders": "C:\\Program Files\\Arduino\\libraries",
+  "customBuildProperties": "build.warn_data_percentage=75,runtime.tools.avr-gcc.path=C:\\Program Files\\Arduino\\hardware\\tools\\avr,runtime.tools.avrdude.path=C:\\Program Files\\Arduino\\hardware\\tools\\avr,runtime.tools.arduinoOTA.path=C:\\Program Files\\Arduino\\hardware\\tools\\avr",
+  "fqbn": "arduino:avr:nano:cpu=atmega328",
+  "hardwareFolders": "C:\\Program Files\\Arduino\\hardware",
+  "otherLibrariesFolders": "C:\\Users\\Gustav\\Documents\\Arduino\\libraries",
+  "runtime.ide.version": "10600",
+  "sketchLocation": "c:\\Users\\Gustav\\Desktop\\Arduino tests\\Fade\\Fade.ino",
+  "toolsFolders": "C:\\Program Files\\Arduino\\tools-builder,C:\\Program Files\\Arduino\\hardware\\tools\\avr"
+}

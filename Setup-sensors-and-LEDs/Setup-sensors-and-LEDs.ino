@@ -112,10 +112,13 @@ void loop() {
 void findSensors(uint8_t drawer) {
 	Serial.print("Please open drawer ");
 	Serial.println(drawer + 1);
-	u8x8.drawString(0,5, "Open drawer ");
-	u8x8.setCursor(12, 5);
-	u8x8.print( drawer + 1 );
-	u8x8.print(" ");
+	// u8x8.drawString(0,5, "Open drawer ");
+	// u8x8.setCursor(12, 5);
+	// u8x8.print( String(drawer + 1).c_str() );
+	// u8x8.print(" ");
+	u8x8.draw2x2UTF8(4,0, "Open");
+	u8x8.draw2x2UTF8(2,2, "drawer");
+	u8x8.draw2x2UTF8(7,4, String(drawer + 1).c_str());
 	bool allClosed = true;
 	uint8_t foundSensor = 0;
 	while (allClosed) { 
@@ -135,6 +138,12 @@ void findSensors(uint8_t drawer) {
 	}
 	digitalWrite(13, HIGH);
 	u8x8.clear();
+//	u8x8.drawString(0,5, "Close drawer");
+//	u8x8.setCursor(13, 5);
+//	u8x8.print( drawer + 1 );
+	u8x8.draw2x2UTF8(3,0, "Close");
+	u8x8.draw2x2UTF8(2,2, "drawer");
+	u8x8.draw2x2UTF8(7,4, String(drawer + 1).c_str());
 	u8x8.setCursor(0, 6);
 	u8x8.print( "Pin" );
 	u8x8.setCursor(4, 6);
@@ -142,9 +151,6 @@ void findSensors(uint8_t drawer) {
 	u8x8.setCursor(7, 6);
 	u8x8.print( "for d");
 	u8x8.setCursor(13, 6);
-	u8x8.print( drawer + 1 );
-	u8x8.drawString(0,5, "Close drawer");
-	u8x8.setCursor(13, 5);
 	u8x8.print( drawer + 1 );
 
 	Serial.print("Found sensor pin ");
@@ -189,7 +195,7 @@ void findLEDs(uint8_t LED) {
 	u8x8.clear();
 	u8x8.draw2x2UTF8(3,0, "Close");
 	u8x8.draw2x2UTF8(2,2, "drawer");
-	u8x8.draw2x2UTF8(7,4, drawer + 1);
+	u8x8.draw2x2UTF8(7,4, String(drawer + 1).c_str());
 
 	u8x8.setCursor(0, 6);
 	u8x8.print("Found drawer ");
